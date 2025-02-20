@@ -1,18 +1,17 @@
+**Done with inspiration from:**
+https://github.com/piyushg9794/Bike-Rental-Demand-forecasting/blob/master/model.ipynb
+
+**Link to collab**
+https://colab.research.google.com/drive/1fvFFRs-Iy0eo3cpYASiT-6iCCrSMo1vD?usp=sharing
+
+
+
+
+
+
+
 **Intro and Imports**
 
-```
-import os
-from google.colab import drive
-drive.mount("/content/drive", force_remount=True)
-
-# Check if files are there
-
-```
-```
-import os
-os.chdir('/content/drive/My Drive/SMASK_Project')
-!ls
-```
 ```
 
 import pandas as pd
@@ -29,10 +28,18 @@ import sklearn.ensemble as skl_en
 import sklearn.svm as skl_svm
 import sklearn.neural_network as skl_nn
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 
 from IPython.core.pylabtools import figsize
 from sklearn.model_selection import train_test_split
+
 ```
 ```
 
@@ -91,6 +98,37 @@ plt.show()
 
 
 -------------------------------------------------------------------------------------
+**Pre-Processing - From here and below, the processing of the data is done**
+
+
+Checks nulls:
+```
+df.isnull().sum
+```
+Drops snow
+
+```
+columnsToDrop= ['snow']
+df.drop(columnsToDrop, axis=1, inplace=True)
+```
+Checks missing values and replaces with median
+
+```
+# Check for missing values
+print(df.isnull().sum())
+
+# Fill numerical missing values with median
+df.fillna(df.median(), inplace=True)
+
+# Fill categorical missing values with mode
+for col in df.select_dtypes(include=['object']).columns:
+    df[col].fillna(df[col].mode()[0], inplace=True)
+
+print("Missing values handled.")
+
+```
+-------------------------------------------------------------------------------------
+
 **Normalizing and scaling**
 
 **Z-score** standardization (which assumes normality).
@@ -120,7 +158,7 @@ for x in columns:
 ![Day_of_week](https://github.com/user-attachments/assets/d14085bf-276c-4f4d-bd36-b4ab77015aaf)
 ![Hour_of_day](https://github.com/user-attachments/assets/59a1db10-a564-40cc-b3b1-e9139bcd6e71)
 
-Based on this we conclude
+Based on these graphs, I conclude that the preceding handling of the data will be:
 
 **hour_of_day	Numerical (Normal)**	Z-score (Standardization),
 
@@ -147,7 +185,89 @@ month	Categorical	One-Hot Encoding
 
 **increase_stock**	Target Variable	No Normalization (Already Binary 0/1)
 
+
+
+
+**Scales**
+```
+
+# Initialize scalers
+z_scaler = StandardScaler()
+minmax_scaler = MinMaxScaler()
+
+# Apply Z-score Standardization (for normally distributed numerical features)
+zscore_features = ['hour_of_day', 'temp', 'dew', 'humidity', 'windspeed']
+df[zscore_features] = z_scaler.fit_transform(df[zscore_features])
+
+# Apply Min-Max Scaling (for skewed numerical features)
+minmax_features = ['cloudcover', 'visibility']
+df[minmax_features] = minmax_scaler.fit_transform(df[minmax_features])
+
+# Encode Categorical Features
+df = pd.get_dummies(df, columns=['month'], prefix='month')  # One-hot encode month
+df['day_sin'] = np.sin(2 * np.pi * df['day_of_week'] / 7)  # Sine encoding for weekdays
+df['day_cos'] = np.cos(2 * np.pi * df['day_of_week'] / 7)  # Cosine encoding for weekdays
+df.drop(columns=['day_of_week'], inplace=True)  # Remove original categorical column
+
+# Target variable remains as is (Binary 0/1)
+print("Feature transformation complete!")
+
+```
+
+**Checks scaling**
+```
+
+# Check summary statistics of transformed features
+print("Summary statistics of transformed features:\n")
+print(df.describe())
+
+# Visualize Z-score Standardized Features
+zscore_features = ['hour_of_day', 'temp', 'dew', 'humidity', 'windspeed']
+plt.figure(figsize=(12, 6))
+for i, feature in enumerate(zscore_features, 1):
+    plt.subplot(2, 3, i)
+    sns.histplot(df[feature], kde=True)
+    plt.title(f"Standardized {feature}")
+plt.tight_layout()
+plt.show()
+
+# Visualize Min-Max Scaled Features
+minmax_features = ['cloudcover', 'visibility']
+plt.figure(figsize=(10, 4))
+for i, feature in enumerate(minmax_features, 1):
+    plt.subplot(1, 2, i)
+    sns.histplot(df[feature], kde=True)
+    plt.title(f"Min-Max Scaled {feature}")
+plt.tight_layout()
+plt.show()
+
+print("Feature verification complete!")
+```
+**Creating data split using seed so the data is uniform over models**
+
+```
+
+#Creating data split 
+
+from sklearn.model_selection import train_test_split
+
+# Define feature matrix (X) and target variable (y)
+X = df.drop(columns=['increase_stock'])  # Drop target column
+y = df['increase_stock']  # Target variable
+
+# Split data into training (80%) and testing (20%) sets with a fixed random state
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Verify shape
+print(f"Training set: {X_train.shape}, Testing set: {X_test.shape}")
+
+```
+
+
+
 -------------------------------------------------------------------------------------
+
+
 
 
 
