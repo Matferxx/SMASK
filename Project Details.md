@@ -243,6 +243,12 @@ plt.show()
 
 print("Feature verification complete!")
 ```
+![image](https://github.com/user-attachments/assets/9c0ac094-5259-4c06-b8f5-22756ef1b345)
+![image](https://github.com/user-attachments/assets/a8ec0524-b8ba-402d-b2b5-aef6a1bdd566)
+
+
+
+
 **Creating data split using seed so the data is uniform over models**
 
 ```
@@ -262,6 +268,12 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 print(f"Training set: {X_train.shape}, Testing set: {X_test.shape}")
 
 ```
+
+
+**Final Model Performance**
+
+![image](https://github.com/user-attachments/assets/0bef8dbc-27de-476a-957a-bbb313da790f)
+
 
 
 
